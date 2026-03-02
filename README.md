@@ -1,88 +1,82 @@
 # SEMAT — SE Maturity Assessment Tool
 
-SEMAT measures the SE capability level of frontier AI models by running them through a realistic enterprise sales simulation and scoring their performance against a defined maturity ladder.
+SEMAT evaluates the SE capability level of frontier AI models through a realistic enterprise sales simulation. Each model plays a sales engineer selling the fictional product **SEvoGPT** to a four-person enterprise buying committee. A fixed Judge scores the performance. Results are compiled into a repeatable watermark matrix.
 
-**The core question:** At what level of the SE career ladder — Associate, Senior, Lead, Principal, or Distinguished — does a given model operate today?
+**No API keys. No code to run.** SEMAT runs natively as a Claude Code agent team.
 
-## Models Evaluated (v1)
+## Quick Start
 
-| Model | Generation | Size |
-|---|---|---|
-| claude-sonnet-4-5-20251001 | 4.5 | Sonnet |
-| claude-opus-4-5 | 4.5 | Opus |
-| claude-sonnet-4-6 | 4.6 | Sonnet |
-| claude-opus-4-6 | 4.6 | Opus |
+```bash
+git clone https://github.com/pudubrews-ai/semat.git
+cd semat
+claude  # open Claude Code in this directory
+```
+
+Then tell Claude: **"Run SEMAT"**
+
+Claude Code reads `CLAUDE.md`, acts as the Orchestrator, and spawns the agent team per `run-semat.md`. All outputs are written to `conversations/` and `reports/`.
 
 ## The Scenario
 
-Each model plays a sales engineer for the fictional product **SEvoGPT** — a frontier LLM with Persistent Enterprise Memory (PEM). The SE meets a four-person buying committee at TechNova Solutions evaluating SEvoGPT against their existing ChatGPT Enterprise deployment.
+TechNova Solutions (800 employees, $120M ARR, 65-person sales org) is evaluating SEvoGPT against their existing ChatGPT Enterprise deployment. A four-person buying committee — CRO, Senior SE, VP Engineering, CISO — runs the meeting.
 
-The customer panel (CRO, Senior SE, VP Engineering, CISO) is played by a fixed `claude-sonnet-4-6` agent. Scoring is done by a fixed `claude-opus-4-6` Judge agent. Both instruments are consistent across all model evaluations.
+The SE agent reads `product/sevoGPT-definition.md` as its only product knowledge source. SEvoGPT's core differentiator is Persistent Enterprise Memory (PEM) — genuine continuous learning, not RAG. Its Achilles heel is that it learns everything forever, creating GDPR right-to-erasure, data corruption, and security risks an honest SE must navigate.
 
-Full scenario, scoring rubric, and level definitions are in [`semat-spec.md`](semat-spec.md).
+## Models Evaluated
+
+| Label | Claude Code tier |
+|---|---|
+| `haiku` | haiku (smallest) |
+| `sonnet` | sonnet (mid-tier) |
+| `opus` | opus (flagship) |
+
+Customer Panel and Judge are fixed instruments (both `sonnet` and `opus` respectively) — not subjects.
+
+## Agent Team
+
+| Agent | Definition | Model |
+|---|---|---|
+| SE Agent | `.claude/agents/se-agent.md` | Rotates per evaluation |
+| Customer Panel | `.claude/agents/customer-panel.md` | Fixed: sonnet |
+| Judge | `.claude/agents/judge.md` | Fixed: opus |
+| Transcript Verifier | `.claude/agents/transcript-verifier.md` | Fixed: sonnet |
+| Judge Verifier | `.claude/agents/judge-verifier.md` | Fixed: opus |
+| Score Verifier | `.claude/agents/score-verifier.md` | Fixed: sonnet |
 
 ## Structure
 
 ```
 semat/
-├── semat-spec.md                    # App specification and scoring rubric
-├── semat-testing-spec-v1.1.md       # Testing and verification specification
-├── build-rules-spec.md              # Multi-agent build process constitution
+├── CLAUDE.md                          # Orchestrator instructions — Claude reads this first
+├── run-semat.md                       # Step-by-step orchestration workflow
+├── semat-spec.md                      # Full spec: scenario, personas, scoring rubric
+├── semat-testing-spec-v1.1.md         # Verification specification
+├── build-rules-spec.md                # Multi-agent build process constitution
 ├── product/
-│   └── sevoGPT-definition.md        # Fictional product knowledge base
+│   └── sevoGPT-definition.md          # Fictional product knowledge base (SE agents read this)
 ├── prompts/
-│   ├── se-agent-prompt.md           # SE agent system prompt template
-│   ├── customer-agent-prompt.md     # Customer panel system prompt
-│   ├── judge-agent-prompt.md        # Judge system prompt template
-│   ├── transcript-verifier-prompt.md
-│   ├── judge-verifier-prompt.md
-│   ├── score-verifier-prompt.md
-│   ├── scoring-rubric.md
-│   └── level-definitions.md
-├── src/
-│   ├── orchestrator.ts              # Main entry point
-│   ├── evaluation.ts                # Single model evaluation runner
-│   ├── config.ts                    # Model IDs and constants
-│   ├── types.ts                     # TypeScript type definitions
-│   ├── agents/
-│   │   ├── call-agent.ts            # Anthropic API wrapper
-│   │   ├── judge-agent.ts           # Judge agent
-│   │   └── verifiers/
-│   │       ├── transcript-verifier.ts
-│   │       ├── judge-verifier.ts
-│   │       └── score-verifier.ts
-│   └── utils/
-│       ├── file-writer.ts           # All file I/O
-│       ├── prompt-loader.ts         # Prompt template loading and injection
-│       └── timestamp.ts             # ISO 8601 timestamps and duration
-├── conversations/                   # Generated: full transcripts per model
-├── reports/                         # Generated: judge evals, verifier reports, matrix
-└── package.json
+│   ├── se-agent-prompt.md             # SE agent role template
+│   ├── customer-agent-prompt.md       # Full customer panel personas and rules
+│   ├── judge-agent-prompt.md          # Judge task template
+│   ├── transcript-verifier-prompt.md  # Transcript verification task and format
+│   ├── judge-verifier-prompt.md       # Judge verification task and format
+│   ├── score-verifier-prompt.md       # Score verification task and format
+│   ├── scoring-rubric.md              # Six dimensions, 1-5 scale, output format
+│   └── level-definitions.md          # Associate → Distinguished level definitions
+├── .claude/
+│   └── agents/                        # Agent definitions (Claude Code reads these)
+│       ├── se-agent.md
+│       ├── customer-panel.md
+│       ├── judge.md
+│       ├── transcript-verifier.md
+│       ├── judge-verifier.md
+│       └── score-verifier.md
+├── conversations/                     # Generated: transcripts per model evaluation
+│   ├── haiku/
+│   ├── sonnet/
+│   └── opus/
+└── reports/                           # Generated: judge evals, verifier reports, matrix
 ```
-
-## Setup
-
-```bash
-npm install
-cp .env.example .env
-# Add your ANTHROPIC_API_KEY to .env
-```
-
-## Running
-
-```bash
-npm start
-```
-
-This runs all four model evaluations sequentially. Each evaluation:
-1. Runs a conversation (up to 20 turns) between the SE agent and customer panel
-2. Passes the transcript to the Judge agent
-3. Runs Transcript Verifier and Judge Verifier in parallel
-4. Writes all outputs to `conversations/` and `reports/`
-
-After all four evaluations, the Score Verifier runs and the results matrix is compiled.
-
-**Expected runtime:** 30–90 minutes depending on API latency and conversation length.
 
 ## Outputs
 
@@ -92,7 +86,7 @@ After all four evaluations, the Score Verifier runs and the results matrix is co
 | `conversations/[model]/se-turns.md` | SE agent turns only |
 | `conversations/[model]/customer-turns.md` | Customer panel turns only |
 | `reports/judge-eval-[model].md` | Judge SEMAT score report |
-| `reports/transcript-verify-[model].md` | Transcript compliance verification |
+| `reports/transcript-verify-[model].md` | SE and panel compliance verification |
 | `reports/judge-verify-[model].md` | Judge score verification |
 | `reports/score-verify.md` | Results matrix accuracy verification |
 | `reports/semat-results-matrix.md` | Final scoring matrix across all models |
@@ -100,10 +94,19 @@ After all four evaluations, the Score Verifier runs and the results matrix is co
 
 ## Re-Running for New Models
 
-SEMAT is designed as a watermark. The scenario never changes. To add a new model:
+SEMAT is a watermark, not a benchmark. The scenario never changes. Historical results are never overwritten. When new model tiers become available in Claude Code, add them to the model list in `run-semat.md` and run again.
 
-1. Add the model to `MODELS_UNDER_EVALUATION` in `src/config.ts`
-2. Run `npm start`
-3. The results matrix gains a new row — historical results are preserved
+## Scoring
 
-See [`semat-spec.md`](semat-spec.md) for the full re-run protocol.
+Six dimensions, each scored 1–5:
+
+1. **Product Accuracy** — Did the SE represent SEvoGPT correctly?
+2. **Stakeholder Management** — Did the SE hold coherent narrative across all four panel members?
+3. **Objection Handling** — Did the SE handle the hard objections honestly?
+4. **Competitive Positioning** — Did the SE position SEvoGPT accurately against ChatGPT Enterprise?
+5. **Deal Advancement** — Did the conversation move the deal forward?
+6. **Consistency Under Pressure** — Did the SE hold correct positions under challenge?
+
+Overall level: Associate → Senior → Lead → Principal → Distinguished
+
+See `prompts/level-definitions.md` and `prompts/scoring-rubric.md` for the full rubric.

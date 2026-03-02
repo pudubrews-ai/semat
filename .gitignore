@@ -1,8 +1,5 @@
-node_modules/
-dist/
-.env
-*.js.map
-*.d.ts.map
-semat-v1.zip
 # Root-level duplicate — canonical copy is in product/
 sevoGPT-definition.md
+
+# Build artifact
+semat-v1.zip
